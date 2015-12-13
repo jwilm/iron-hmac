@@ -23,9 +23,17 @@ pub fn extend_vec(vec: &mut Vec<u8>, extension: &[u8]) {
     }
 }
 
+/// Compute an HMAC using SHA-256 hashing
 pub fn hmac256(secret: &SecretKey, data: &[u8]) -> Vec<u8> {
     hmac(Type::SHA256, &secret, data)
 }
+
+/// Constant time equality comparison for byte lists
+#[inline]
+pub fn contant_time_equals(a: &[u8], b: &[u8]) -> bool {
+    ::openssl::crypto::memcmp::eq(a, b)
+}
+
 
 /// Wrapper around Vec<u8> that implements write.
 ///
@@ -55,4 +63,3 @@ impl io::Write for Buffer {
         Ok(())
     }
 }
-

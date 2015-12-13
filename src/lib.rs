@@ -20,7 +20,6 @@ use iron::response::ResponseBody;
 use iron::{BeforeMiddleware, AfterMiddleware};
 use openssl::crypto::hash::Type;
 use openssl::crypto::hmac;
-use openssl::crypto::memcmp::eq as eq_constant_time;
 use rustc_serialize::hex::FromHex;
 use std::io::Write;
 use std::ops::Deref;
@@ -171,7 +170,7 @@ impl BeforeMiddleware for Hmac256Authentication {
             forbidden!();
         }
 
-        if eq_constant_time(&computed[..], &supplied[..]) {
+        if util::contant_time_equals(&computed[..], &supplied[..]) {
             Ok(())
         } else {
             forbidden!()
