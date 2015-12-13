@@ -11,8 +11,6 @@ extern crate iron;
 extern crate url;
 extern crate bodyparser;
 extern crate persistent;
-#[macro_use]
-extern crate hyper;
 extern crate rustc_serialize;
 
 use rustc_serialize::hex::FromHex;
