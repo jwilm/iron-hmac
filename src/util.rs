@@ -1,5 +1,6 @@
 use openssl::crypto::hash::Type;
 use openssl::crypto::hmac::hmac;
+use std::io;
 
 use ::SecretKey;
 
@@ -25,3 +26,33 @@ pub fn extend_vec(vec: &mut Vec<u8>, extension: &[u8]) {
 pub fn hmac256(secret: &SecretKey, data: &[u8]) -> Vec<u8> {
     hmac(Type::SHA256, &secret, data)
 }
+
+/// Wrapper around Vec<u8> that implements write.
+///
+/// It can be consumed at any time to obtain the Vec<u8>. This is needed by the after middleware for
+/// reading the response body for HMAC header computation.
+pub struct Buffer(Vec<u8>);
+
+impl Buffer {
+    /// Create a new buffer
+    pub fn new() -> Buffer {
+        Buffer(Vec::new())
+    }
+
+    /// Take ownership of the wrapped Vec<u8>
+    pub fn to_inner(self) -> Vec<u8> {
+        self.0
+    }
+}
+
+impl io::Write for Buffer {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        extend_vec(&mut self.0, buf);
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+

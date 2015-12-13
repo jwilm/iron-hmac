@@ -104,7 +104,6 @@ impl std::error::Error for StringError {
 
 
 impl Hmac256Authentication {
-
     fn compute_request_hmac(&self, req: &mut iron::Request) -> IronResult<Vec<u8>> {
         let body = match req.get::<bodyparser::Raw>() {
             Ok(Some(body)) => {
@@ -140,9 +139,9 @@ impl Hmac256Authentication {
         -> IronResult<Vec<u8>> {
         let body: Vec<u8> = match res.body {
             Some(ref mut body) => {
-                let mut buf = Buffer::new();
+                let mut buf = util::Buffer::new();
                 body.write_body(&mut ResponseBody::new(&mut buf));
-                buf.0
+                buf.to_inner()
             }, None => {
                 Vec::new()
             }
@@ -188,26 +187,6 @@ impl BeforeMiddleware for Hmac256Authentication {
         } else {
             forbidden!()
         }
-    }
-}
-
-/// A generic buffer that can be written to
-struct Buffer(Vec<u8>);
-
-impl Buffer {
-    pub fn new() -> Buffer {
-        Buffer(Vec::new())
-    }
-}
-
-impl io::Write for Buffer {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        util::extend_vec(&mut self.0, buf);
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
     }
 }
 
