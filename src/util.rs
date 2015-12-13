@@ -63,3 +63,14 @@ impl io::Write for Buffer {
         Ok(())
     }
 }
+
+/// Serialize a list of bytes into a hex string
+pub fn to_hex(bytes: &[u8]) -> String {
+    use std::fmt::Write;
+    let mut s = String::new();
+    for &byte in bytes {
+        write!(&mut s, "{:02x}", byte).unwrap();
+    }
+
+    s
+}

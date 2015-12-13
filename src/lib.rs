@@ -179,7 +179,7 @@ impl BeforeMiddleware for Hmac256Authentication {
 impl AfterMiddleware for Hmac256Authentication {
     fn after(&self, _: &mut iron::Request, mut res: iron::Response) -> IronResult<Response> {
         let hmac = try!(self.compute_response_hmac(&mut res));
-        let hmac_hex_encoded = to_hex!(&hmac[..]).as_bytes().to_vec();
+        let hmac_hex_encoded = util::to_hex(&hmac[..]).as_bytes().to_vec();
         res.headers.set_raw(self.hmac_header_key.clone(), vec![hmac_hex_encoded]);
         Ok(res)
     }
