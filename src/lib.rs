@@ -13,14 +13,13 @@ extern crate bodyparser;
 extern crate persistent;
 extern crate rustc_serialize;
 
-use rustc_serialize::hex::FromHex;
-
 use iron::prelude::*;
 use iron::response::ResponseBody;
 use iron::{BeforeMiddleware, AfterMiddleware, status};
 use openssl::crypto::hash::Type;
 use openssl::crypto::hmac;
 use openssl::crypto::memcmp::eq as eq_constant_time;
+use rustc_serialize::hex::FromHex;
 use std::error::Error;
 use std::fmt::{self, Debug};
 use std::io::{self, Write, Read};
