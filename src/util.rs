@@ -4,6 +4,7 @@ use std::str::from_utf8;
 use openssl::crypto::hash::Type;
 use openssl::crypto::hmac::hmac;
 use rustc_serialize::hex::FromHex;
+use rustc_serialize::hex::ToHex;
 
 use ::error::{Result};
 use ::SecretKey;
@@ -70,13 +71,7 @@ impl io::Write for Buffer {
 
 /// Serialize a list of bytes into a hex string
 pub fn to_hex(bytes: &[u8]) -> String {
-    use std::fmt::Write;
-    let mut s = String::new();
-    for &byte in bytes {
-        write!(&mut s, "{:02x}", byte).unwrap();
-    }
-
-    s
+    bytes.to_hex()
 }
 
 /// Interpret a slice of utf8 bytes as hex values
