@@ -24,6 +24,7 @@ use std::io::{self, Write, Read};
 use std::ops::Deref;
 use url::format::PathFormatter;
 
+mod util;
 
 /// Key used for HMAC
 ///
@@ -272,21 +273,7 @@ impl Buffer {
 
 impl io::Write for Buffer {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        // The implementation here is the extend_from_slice which should be stabilised in rust 1.6
-        // https://github.com/rust-lang/rust/pull/30187/files#diff-77adadec35cb5b03d4933f83754de940R966
-        self.0.reserve(buf.len());
-
-        for i in 0..buf.len() {
-            let len = self.0.len();
-            // Unsafe code so this can be optimised to a memcpy (or something
-            // similarly fast) when T is Copy. LLVM is easily confused, so any
-            // extra operations during the loop can prevent this optimisation.
-            unsafe {
-                std::ptr::write(self.0.get_unchecked_mut(len), buf.get_unchecked(i).clone());
-                self.0.set_len(len + 1);
-            }
-        }
-
+        util::extend_vec(&mut self.0, buf);
         Ok(buf.len())
     }
 
