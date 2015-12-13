@@ -61,35 +61,6 @@ impl Into<SecretKey> for String {
     }
 }
 
-/// The HMAC hash
-///
-/// Newtype for 32 byte array
-#[derive(Debug)]
-struct Hmac256([u8; 32]);
-
-impl Hmac256 {
-    fn new(bytes: &[u8]) -> Hmac256 {
-        let mut h = Hmac256([0u8; 32]);
-        for i in 0..h.len() {
-            h.0[i] = bytes[i];
-        }
-
-        h
-    }
-
-    fn compute(key: &SecretKey, bytes: &[u8]) -> Hmac256 {
-        Hmac256::new(&hmac::hmac(Type::SHA256, &key, bytes)[..])
-    }
-}
-
-impl Deref for Hmac256 {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
-        &self.0[..]
-    }
-}
-
 /// Iron middleware for validation hmac headers on requests and signing responses.
 ///
 /// The algorithm employed is as follows.
@@ -149,7 +120,7 @@ macro_rules! try_io {
 
 impl Hmac256Authentication {
 
-    fn compute_request_hmac(&self, req: &mut iron::Request) -> IronResult<Hmac256> {
+    fn compute_request_hmac(&self, req: &mut iron::Request) -> IronResult<Vec<u8>> {
         let body = match req.get::<bodyparser::Raw>() {
             Ok(Some(body)) => {
                 body
@@ -166,9 +137,9 @@ impl Hmac256Authentication {
             formatter.to_string()
         };
 
-        let method_hmac = Hmac256::compute(&self.secret, method.as_bytes());
-        let path_hmac = Hmac256::compute(&self.secret, path.as_bytes());
-        let body_hmac = Hmac256::compute(&self.secret, body.as_bytes());
+        let method_hmac = util::hmac256(&self.secret, method.as_bytes());
+        let path_hmac = util::hmac256(&self.secret, path.as_bytes());
+        let body_hmac = util::hmac256(&self.secret, body.as_bytes());
 
         let mut merged_hmac = hmac::HMAC::new(Type::SHA256, &self.secret[..]);
 
@@ -176,7 +147,7 @@ impl Hmac256Authentication {
         merged_hmac.write_all(&path_hmac[..]);
         merged_hmac.write_all(&body_hmac[..]);
 
-        Ok(Hmac256::new(&merged_hmac.finish()))
+        Ok(merged_hmac.finish())
 
     }
 
@@ -241,7 +212,7 @@ impl BeforeMiddleware for Hmac256Authentication {
             None => forbidden!()
         };
 
-        if &computed[..].len() != &supplied.len() {
+        if computed.len() != supplied.len() {
             forbidden!();
         }
 

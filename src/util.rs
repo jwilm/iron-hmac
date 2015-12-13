@@ -1,3 +1,8 @@
+use openssl::crypto::hash::Type;
+use openssl::crypto::hmac::hmac;
+
+use ::SecretKey;
+
 // Vector extension from slice
 //
 // The implementation here is the extend_from_slice which should be stabilised in rust 1.6
@@ -15,4 +20,8 @@ pub fn extend_vec(vec: &mut Vec<u8>, extension: &[u8]) {
             vec.set_len(len + 1);
         }
     }
+}
+
+pub fn hmac256(secret: &SecretKey, data: &[u8]) -> Vec<u8> {
+    hmac(Type::SHA256, &secret, data)
 }
