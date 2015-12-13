@@ -28,6 +28,9 @@ use url::format::PathFormatter;
 
 mod util;
 
+#[macro_use]
+mod macros;
+
 /// Key used for HMAC
 ///
 /// SecretKey is a newtype for Vec<u8>, and deref returns a &[u8]. The Vec<u8> representation is
@@ -99,24 +102,6 @@ impl std::error::Error for StringError {
     fn description(&self) -> &str { &*self.0 }
 }
 
-macro_rules! forbidden {
-    () => {{
-        let err = StringError("Failed HMAC authentication".to_string());
-        return Err(iron::IronError::new(err, iron::status::Forbidden));
-    }}
-}
-
-macro_rules! try_io {
-    ($expr:expr) => {{
-        match $expr {
-            std::result::Result::Ok(val) => val,
-            std::result::Result::Err(err) => {
-                let str_err = StringError(err.description().to_string());
-                return Err(iron::IronError::new(str_err, status::InternalServerError));
-            }
-        }
-    }}
-}
 
 impl Hmac256Authentication {
 
@@ -170,24 +155,6 @@ impl Hmac256Authentication {
 
         Ok(response_hmac)
     }
-}
-
-macro_rules! to_hex {
-    ($bytes:expr) => {{
-        use std::fmt::Write;
-        let mut tmp_str = String::new();
-        for &byte in $bytes {
-            write!(&mut tmp_str, "{:02x}", byte).unwrap();
-        }
-
-        tmp_str
-    }}
-}
-
-macro_rules! print_hex {
-    ($fmt_str:expr, $bytes:expr) => {{
-        println!($fmt_str, to_hex!($bytes));
-    }}
 }
 
 impl BeforeMiddleware for Hmac256Authentication {
