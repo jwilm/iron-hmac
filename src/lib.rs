@@ -19,7 +19,7 @@ use iron::prelude::*;
 use iron::response::ResponseBody;
 use iron::{BeforeMiddleware, AfterMiddleware};
 use openssl::crypto::hash::Type;
-use openssl::crypto::hmac;
+use openssl::crypto::hmac::HMAC;
 use rustc_serialize::hex::FromHex;
 use std::io::Write;
 use std::ops::Deref;
@@ -112,14 +112,13 @@ impl Hmac256Authentication {
         let path_hmac = util::hmac256(&self.secret, path.as_bytes());
         let body_hmac = util::hmac256(&self.secret, body.as_bytes());
 
-        let mut merged_hmac = hmac::HMAC::new(Type::SHA256, &self.secret[..]);
+        let mut merged_hmac = HMAC::new(Type::SHA256, &self.secret[..]);
 
         try!(merged_hmac.write_all(&method_hmac[..]));
         try!(merged_hmac.write_all(&path_hmac[..]));
         try!(merged_hmac.write_all(&body_hmac[..]));
 
         Ok(merged_hmac.finish())
-
     }
 
     fn compute_response_hmac(&self, res: &mut iron::Response) -> Result<Vec<u8>> {
@@ -133,7 +132,7 @@ impl Hmac256Authentication {
             }
         };
 
-        let response_hmac = hmac::hmac(Type::SHA256, &self.secret.0, &body[..]);
+        let response_hmac = util::hmac256(&self.secret, &body[..]);
 
         // Need to reset body now that we've written it
         res.body = Some(Box::new(body));
