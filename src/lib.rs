@@ -154,9 +154,7 @@ impl BeforeMiddleware for Hmac256Authentication {
                 match s.from_hex() {
                     Ok(hex) => hex,
                     Err(err) => {
-                        println!("s: {}", s);
-                        println!("err: {}", err);
-                        forbidden!()
+                        forbidden!(err)
                     }
                 }
             },

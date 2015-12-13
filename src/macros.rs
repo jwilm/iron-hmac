@@ -5,7 +5,11 @@ macro_rules! forbidden {
     () => {{
         let err = ::error::Error::InvalidHmac;
         return Err(::iron::IronError::new(err, ::iron::status::Forbidden));
-    }}
+    }};
+
+    ($err:expr) => {{
+        return Err(::iron::IronError::new($err, ::iron::status::Forbidden));
+    }};
 }
 
 /// Serialize a &[u8] sequence to a hex String
