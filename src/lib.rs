@@ -1,10 +1,35 @@
-//! Before/After middleware for HMAC
+//! [Iron] middleware for HMAC authentication
 //!
-//! Before middleware validates that a request is properly signed. If not, a Forbidden response is
-//! sent.
+//! This package contains `BeforeMiddleware` for authenticating HTTP requests and `AfterMiddleware`
+//! for signing response. The HMAC stragegy is presently hardcoded as follows using an SHA-256 hash.
 //!
-//! After middleware handles signing and adding the appropriate header to the response.
+//! For requests, the expected hmac is
 //!
+//! ```
+//! hmac(hmac(request.method) + hmac(request.path) + hmac(request.body))
+//! ```
+//!
+//! The response is signed with an hmac generated with
+//!
+//! ```
+//! hmac(response.body)
+//! ```
+//!
+//! Middleware can be obtained with the following calls
+//!
+//! ```no_run
+//! # extern crate iron_hmac;
+//! use iron_hmac::Hmac256Authentication;
+//!
+//! let secret = "<your shared hmac secret here>";
+//! let header_name = "x-my-hmac";
+//!
+//! let (hmac_before, hmac_after) = Hmac256Authentication::middleware(secret, header_name);
+//! ```
+//!
+//! The middleware is linked in the usual way.
+//!
+//! [Iron]: https://github.com/iron/iron
 
 #![deny(warnings)]
 
@@ -32,7 +57,7 @@ mod util;
 use error::Result;
 use error::Error;
 
-/// Key used for HMAC
+/// Key used for HMAC computation
 ///
 /// SecretKey is a newtype for Vec<u8>, and deref returns a &[u8]. The Vec<u8> representation is
 /// necessary since the key length cannot be known at compile time.
@@ -66,10 +91,6 @@ impl Into<SecretKey> for String {
 }
 
 /// Iron middleware for validation hmac headers on requests and signing responses.
-///
-/// The algorithm employed is as follows.
-///
-/// `hmac(secret, hmac(secret, method) + hmac(secret, path) + hmac(secret, body))`
 #[derive(Debug, Clone)]
 pub struct Hmac256Authentication {
     secret: SecretKey,
@@ -77,7 +98,10 @@ pub struct Hmac256Authentication {
 }
 
 impl Hmac256Authentication {
-    /// Build Hmac256Authentication before and after middleware given a secret and header key.
+    /// Build Hmac256Authentication BeforeMiddleware and AfterMiddleware
+    ///
+    /// The `secret` parameter is used for all HMAC generation. The `hmac_header_key` is used to
+    /// lookup the request's HMAC.
     pub fn middleware<K: Into<SecretKey>, S: Into<String>>(secret: K, hmac_header_key: S)
         -> (Hmac256Authentication, Hmac256Authentication) {
 
