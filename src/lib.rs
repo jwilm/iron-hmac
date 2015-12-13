@@ -15,15 +15,14 @@ extern crate rustc_serialize;
 
 use rustc_serialize::hex::FromHex;
 
-use std::ops::Deref;
-use iron::{BeforeMiddleware, AfterMiddleware, status};
-use iron::response::ResponseBody;
 use iron::prelude::*;
-use url::format::PathFormatter;
-use std::io::{self, Write, Read};
-use std::fmt::{self, Debug};
+use iron::response::ResponseBody;
+use iron::{BeforeMiddleware, AfterMiddleware, status};
 use std::error::Error;
-use hyper::header::Headers;
+use std::fmt::{self, Debug};
+use std::io::{self, Write, Read};
+use std::ops::Deref;
+use url::format::PathFormatter;
 
 
 /// Key used for HMAC
