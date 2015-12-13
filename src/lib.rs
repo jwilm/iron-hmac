@@ -20,7 +20,6 @@ use iron::response::ResponseBody;
 use iron::{BeforeMiddleware, AfterMiddleware};
 use openssl::crypto::hash::Type;
 use openssl::crypto::hmac::HMAC;
-use rustc_serialize::hex::FromHex;
 use std::io::Write;
 use std::ops::Deref;
 use url::format::PathFormatter;
@@ -144,16 +143,7 @@ impl BeforeMiddleware for Hmac256Authentication {
         let computed = try!(self.compute_request_hmac(req));
         let supplied = match req.headers.get_raw(&self.hmac_header_key[..]) {
             Some(hmac) => {
-                let s = std::str::from_utf8(&hmac[0][..]).unwrap();
-                if s.len() != 64 {
-                    forbidden!();
-                }
-                match s.from_hex() {
-                    Ok(hex) => hex,
-                    Err(err) => {
-                        forbidden!(err)
-                    }
-                }
+                try!(util::from_hex(&hmac[0][..]))
             },
             None => {
                 let err = Error::MissingHmacHeader(self.hmac_header_key.clone());

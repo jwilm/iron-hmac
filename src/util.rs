@@ -1,7 +1,11 @@
+use std::io;
+use std::str::from_utf8;
+
 use openssl::crypto::hash::Type;
 use openssl::crypto::hmac::hmac;
-use std::io;
+use rustc_serialize::hex::FromHex;
 
+use ::error::{Result};
 use ::SecretKey;
 
 // Vector extension from slice
@@ -73,4 +77,10 @@ pub fn to_hex(bytes: &[u8]) -> String {
     }
 
     s
+}
+
+/// Interpret a slice of utf8 bytes as hex values
+pub fn from_hex(maybe_utf8_bytes: &[u8]) -> Result<Vec<u8>> {
+    let s = try!(from_utf8(maybe_utf8_bytes));
+    Ok(try!(s.from_hex()))
 }
