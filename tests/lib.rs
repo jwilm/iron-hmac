@@ -87,8 +87,9 @@ fn incorrect_hmac_is_forbidden() {
 
     {
         let client = Client::new();
+        let request_hmac = "b1d56c98b74d0da82f1105beee559de64480d7632177a28a4a1331a7d0517362";
         let res = client.get(&url[..])
-                            .header(XHmac("b1d56c98b74d0da82f1105beee559de64480d7632177a28a4a1331a7d0517362".to_owned()))
+                            .header(XHmac(request_hmac.to_owned()))
                             .send().unwrap();
 
         assert_eq!(res.status, hyper::status::StatusCode::Forbidden);
@@ -99,11 +100,14 @@ fn incorrect_hmac_is_forbidden() {
 fn correct_hmac_is_ok() {
     let (_close_guard, url) = build_hmac_hello_world();
     {
-        let expected_response_hmac = "ccc7dfe24de0375cc49067576b69ba4d68be554c9f86fb3dadfc053ce84f71a0";
+        let expected_response_hmac =
+            "ccc7dfe24de0375cc49067576b69ba4d68be554c9f86fb3dadfc053ce84f71a0";
+
+        let request_hmac = "fa64feb94f1d649d435ae6dce009ff0767f57c0f20867dde5f8f6712fea3a7be";
 
         let client = Client::new();
         let mut res = client.get(&url[..])
-                            .header(XHmac("fa64feb94f1d649d435ae6dce009ff0767f57c0f20867dde5f8f6712fea3a7be".to_owned()))
+                            .header(XHmac(request_hmac.to_owned()))
                             .send().unwrap();
 
         assert_eq!(res.status, hyper::status::StatusCode::Ok);
