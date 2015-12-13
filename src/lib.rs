@@ -6,6 +6,9 @@
 //! After middleware handles signing and adding the appropriate header to the response.
 //!
 
+#![deny(unused_imports)]
+#![deny(dead_code)]
+
 extern crate openssl;
 extern crate iron;
 extern crate url;
@@ -15,14 +18,14 @@ extern crate rustc_serialize;
 
 use iron::prelude::*;
 use iron::response::ResponseBody;
-use iron::{BeforeMiddleware, AfterMiddleware, status};
+use iron::{BeforeMiddleware, AfterMiddleware};
 use openssl::crypto::hash::Type;
 use openssl::crypto::hmac;
 use openssl::crypto::memcmp::eq as eq_constant_time;
 use rustc_serialize::hex::FromHex;
 use std::error::Error;
 use std::fmt::{self, Debug};
-use std::io::{self, Write, Read};
+use std::io::Write;
 use std::ops::Deref;
 use url::format::PathFormatter;
 
@@ -112,7 +115,7 @@ impl Hmac256Authentication {
             Ok(None) => {
                 "".to_string()
             },
-            Err(err) => forbidden!()
+            Err(_) => forbidden!()
         };
 
         let method = req.method.as_ref();
@@ -191,7 +194,7 @@ impl BeforeMiddleware for Hmac256Authentication {
 }
 
 impl AfterMiddleware for Hmac256Authentication {
-    fn after(&self, req: &mut iron::Request, mut res: iron::Response) -> IronResult<Response> {
+    fn after(&self, _: &mut iron::Request, mut res: iron::Response) -> IronResult<Response> {
         let hmac = try!(self.compute_response_hmac(&mut res));
         let hmac_hex_encoded = to_hex!(&hmac[..]).as_bytes().to_vec();
         res.headers.set_raw(self.hmac_header_key.clone(), vec![hmac_hex_encoded]);
