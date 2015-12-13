@@ -5,20 +5,19 @@
 //!
 //! For requests, the expected hmac is
 //!
-//! ```
+//! ```plain
 //! hmac(hmac(request.method) + hmac(request.path) + hmac(request.body))
 //! ```
 //!
 //! The response is signed with an hmac generated with
 //!
-//! ```
+//! ```plain
 //! hmac(response.body)
 //! ```
 //!
 //! Middleware can be obtained with the following calls
 //!
 //! ```no_run
-//! # extern crate iron_hmac;
 //! use iron_hmac::Hmac256Authentication;
 //!
 //! let secret = "<your shared hmac secret here>";
