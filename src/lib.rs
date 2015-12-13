@@ -27,7 +27,6 @@ use std::fmt::{self, Debug};
 use std::error::Error;
 use hyper::header::Headers;
 
-header! { (XHmac, "x-hmac") => [String] }
 
 /// Key used for HMAC
 ///
@@ -305,102 +304,5 @@ impl AfterMiddleware for Hmac256Authentication {
         let hmac_hex_encoded = to_hex!(&hmac[..]).as_bytes().to_vec();
         res.headers.set_raw(self.hmac_header_key.clone(), vec![hmac_hex_encoded]);
         Ok(res)
-    }
-}
-
-#[test]
-fn hmac_works() {
-    let key = SecretKey::new(b"rust :)");
-
-    println!("key: {:?}", key);
-    let data = b"This is some data";
-    let expected = b"\xc7\x5b\x1a\xa1\xcf\x39\x3b\xf0\xb1\xcf\x3c\xbd\xe4\xce\x1f\x27\xa2\x2e\x08\x1f\xf1\xf5\xfa\x77\x19\x33\x55\x10\xc4\xe2\x43\x56";
-    let actual = Hmac256::compute(&key, data);
-    println!("hmac: {:?}", actual);
-
-    assert_eq!(&actual[..], expected);
-}
-
-#[test]
-fn it_works() {
-    use hyper::Client;
-
-    const MAX_BODY_LENGTH: usize = 1024 * 1024 * 10;
-
-    fn hello_world(_: &mut Request) -> IronResult<Response> {
-        Ok(Response::with((iron::status::Ok, "Hello, world!")))
-    }
-
-    // Create the hmac middleware
-    let (hmac_before, hmac_after) = Hmac256Authentication::middleware("rust :)", "x-hmac");
-
-    let mut chain = Chain::new(hello_world);
-    chain.link_before(hmac_before);
-    chain.link_before(persistent::Read::<bodyparser::MaxBodyLength>::one(MAX_BODY_LENGTH));
-    chain.link_after(hmac_after);
-
-    struct CloseGuard(hyper::server::Listening);
-    impl Drop for CloseGuard {
-        fn drop(&mut self) {
-            self.0.close().unwrap();
-        }
-    }
-
-    // Server is now running
-    CloseGuard(Iron::new(chain).http("localhost:3000").unwrap());
-
-    // Request with no hmac
-    {
-        let mut client = Client::new();
-        let mut res = client.get("http://localhost:3000/")
-                            .send().unwrap();
-
-        assert_eq!(res.status, hyper::status::StatusCode::Forbidden);
-    }
-
-    // Request with incorrect length hmac
-    {
-        let mut client = Client::new();
-        let mut res = client.get("http://localhost:3000/")
-                            .header(XHmac("123".to_owned()))
-                            .send().unwrap();
-
-        assert_eq!(res.status, hyper::status::StatusCode::BadRequest);
-    }
-
-    // Request with wrong hmac
-    {
-        let mut client = Client::new();
-        let mut res = client.get("http://localhost:3000/")
-                            .header(XHmac("b1d56c98b74d0da82f1105beee559de64480d7632177a28a4a1331a7d0517362".to_owned()))
-                            .send().unwrap();
-
-        assert_eq!(res.status, hyper::status::StatusCode::Forbidden);
-    }
-
-    // Request with the correct hmac
-    {
-        let expected_response_hmac = [217u8, 145, 97, 56, 172, 45, 46, 106, 41, 220, 137, 26, 28, 7,
-            101, 101, 247, 101, 188, 248, 60, 15, 199, 178, 182, 41, 214, 29, 60, 200, 25, 103];
-
-        let expected_response_hmac = "ccc7dfe24de0375cc49067576b69ba4d68be554c9f86fb3dadfc053ce84f71a0";
-
-        // print_hex!("expected_response_hmac: {}", &expected_response_hmac);
-
-        let mut client = Client::new();
-        let mut res = client.get("http://localhost:3000/")
-                            .header(XHmac("fa64feb94f1d649d435ae6dce009ff0767f57c0f20867dde5f8f6712fea3a7be".to_owned()))
-                            .send().unwrap();
-
-        assert_eq!(res.status, hyper::status::StatusCode::Ok);
-
-        // let mut body = String::new();
-        // res.read_to_string(&mut body).unwrap();
-
-        let actual_response_hmac = &res.headers.get_raw("x-hmac").unwrap()[0];
-
-        // assert_eq!("Hello, world!", body);
-        let actual_hmac = std::str::from_utf8(&actual_response_hmac[..]).unwrap();
-        assert_eq!(&actual_hmac[..], &expected_response_hmac[..]);
     }
 }
