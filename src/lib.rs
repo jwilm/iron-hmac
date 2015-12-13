@@ -91,12 +91,8 @@ impl Hmac256Authentication {
 
     fn compute_request_hmac(&self, req: &mut iron::Request) -> Result<Vec<u8>> {
         let body = match try!(req.get::<bodyparser::Raw>()) {
-            Some(body) => {
-                body
-            },
-            None => {
-                "".to_string()
-            },
+            Some(body) => body,
+            None => "".to_string()
         };
 
         let method = req.method.as_ref();
@@ -124,9 +120,8 @@ impl Hmac256Authentication {
                 let mut buf = util::Buffer::new();
                 try!(body.write_body(&mut ResponseBody::new(&mut buf)));
                 buf.to_inner()
-            }, None => {
-                Vec::new()
-            }
+            },
+            None => Vec::new()
         };
 
         let response_hmac = util::hmac256(&self.secret, &body[..]);
@@ -142,9 +137,7 @@ impl BeforeMiddleware for Hmac256Authentication {
     fn before(&self, req: &mut iron::Request) -> IronResult<()> {
         let computed = try!(self.compute_request_hmac(req));
         let supplied = match req.headers.get_raw(&self.hmac_header_key[..]) {
-            Some(hmac) => {
-                try!(util::from_hex(&hmac[0][..]))
-            },
+            Some(hmac) => try!(util::from_hex(&hmac[0][..])),
             None => {
                 let err = Error::MissingHmacHeader(self.hmac_header_key.clone());
                 return Err(::iron::IronError::new(err, ::iron::status::Forbidden));
