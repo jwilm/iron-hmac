@@ -18,6 +18,9 @@ use rustc_serialize::hex::FromHex;
 use iron::prelude::*;
 use iron::response::ResponseBody;
 use iron::{BeforeMiddleware, AfterMiddleware, status};
+use openssl::crypto::hash::Type;
+use openssl::crypto::hmac;
+use openssl::crypto::memcmp::eq as eq_constant_time;
 use std::error::Error;
 use std::fmt::{self, Debug};
 use std::io::{self, Write, Read};
@@ -76,10 +79,7 @@ impl Hmac256 {
     }
 
     fn compute(key: &SecretKey, bytes: &[u8]) -> Hmac256 {
-        use openssl::crypto::hash::Type;
-        use openssl::crypto::hmac::hmac;
-
-        Hmac256::new(&hmac(Type::SHA256, &key, bytes)[..])
+        Hmac256::new(&hmac::hmac(Type::SHA256, &key, bytes)[..])
     }
 }
 
@@ -151,9 +151,6 @@ macro_rules! try_io {
 impl Hmac256Authentication {
 
     fn compute_request_hmac(&self, req: &mut iron::Request) -> IronResult<Hmac256> {
-        use openssl::crypto::hash::Type;
-        use openssl::crypto::hmac::HMAC;
-
         let body = match req.get::<bodyparser::Raw>() {
             Ok(Some(body)) => {
                 body
@@ -174,7 +171,7 @@ impl Hmac256Authentication {
         let path_hmac = Hmac256::compute(&self.secret, path.as_bytes());
         let body_hmac = Hmac256::compute(&self.secret, body.as_bytes());
 
-        let mut merged_hmac = HMAC::new(Type::SHA256, &self.secret[..]);
+        let mut merged_hmac = hmac::HMAC::new(Type::SHA256, &self.secret[..]);
 
         merged_hmac.write_all(&method_hmac[..]);
         merged_hmac.write_all(&path_hmac[..]);
@@ -186,8 +183,6 @@ impl Hmac256Authentication {
 
     fn compute_response_hmac(&self, res: &mut iron::Response)
         -> IronResult<Vec<u8>> {
-        use openssl::crypto::hmac::hmac;
-        use openssl::crypto::hash::Type;
         let body: Vec<u8> = match res.body {
             Some(ref mut body) => {
                 let mut buf = Buffer::new();
@@ -198,7 +193,7 @@ impl Hmac256Authentication {
             }
         };
 
-        let response_hmac = hmac(Type::SHA256, &self.secret.0, &body[..]);
+        let response_hmac = hmac::hmac(Type::SHA256, &self.secret.0, &body[..]);
 
         // Need to reset body now that we've written it
         res.body = Some(Box::new(body));
@@ -227,9 +222,6 @@ macro_rules! print_hex {
 
 impl BeforeMiddleware for Hmac256Authentication {
     fn before(&self, req: &mut iron::Request) -> IronResult<()> {
-        // This is a constant time equality check
-        use openssl::crypto::memcmp::eq;
-
         let computed = try!(self.compute_request_hmac(req));
         let supplied = match req.headers.get_raw(&self.hmac_header_key[..]) {
             Some(hmac) => {
@@ -254,7 +246,7 @@ impl BeforeMiddleware for Hmac256Authentication {
             forbidden!();
         }
 
-        if eq(&computed[..], &supplied[..]) {
+        if eq_constant_time(&computed[..], &supplied[..]) {
             Ok(())
         } else {
             forbidden!()
