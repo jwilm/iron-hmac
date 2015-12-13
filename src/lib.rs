@@ -89,9 +89,7 @@ impl Hmac256Authentication {
 
         (auth.clone(), auth)
     }
-}
 
-impl Hmac256Authentication {
     fn compute_request_hmac(&self, req: &mut iron::Request) -> Result<Vec<u8>> {
         let body = match try!(req.get::<bodyparser::Raw>()) {
             Some(body) => {
