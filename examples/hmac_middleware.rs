@@ -28,7 +28,7 @@ fn main() {
 
     println!("listening on {}", host);
 
-    // If you want to query against this, do a get request and set the x-hmac header to
+    // If you want to query against this, perform a GET request and set the `x-hmac` header to
     // fa64feb94f1d649d435ae6dce009ff0767f57c0f20867dde5f8f6712fea3a7be
     //
     // If you change the body, hmac, or request method, the response should be either forbidden or
