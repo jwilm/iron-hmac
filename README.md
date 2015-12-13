@@ -17,6 +17,9 @@ extern crate iron_hmac;
 
 // ...
 
+// The bodyparser middleware is required for hmac computation
+chain.link_before(Read::<bodyparser::MaxBodyLength>::one(MAX_BODY_LENGTH));
+
 // Build the hmac middleware
 let (hmac_before, hmac_after) =
     iron_hmac::Hmac256Authentication::middleware(secret, header_key);
