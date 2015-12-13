@@ -9,5 +9,7 @@ iron = "0.2"
 url = "0.5"
 bodyparser = "0.0"
 persistent = "*"
-hyper = "0.7"
 rustc-serialize = "0.3"
+
+[dev-dependencies]
+hyper = "0.7"
