@@ -2,13 +2,18 @@
 name = "iron-hmac"
 version = "0.1.0"
 authors = ["Joe Wilm <joe@jwilm.com>"]
+description = "HMAC middleware for the Iron HTTP framework"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/jwilm/iron-hmac"
+documentation = "https://jwilm.github.io/iron-hmac/latest/iron_hmac/"
 
 [dependencies]
 openssl = "0.7"
 iron = "0.2"
 url = "0.5"
 bodyparser = "0.0"
-persistent = "*"
+persistent = "0.0"
 rustc-serialize = "0.3"
 
 [dev-dependencies]
