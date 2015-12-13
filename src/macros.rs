@@ -3,21 +3,8 @@
 /// The error string indicates that HMAC auth failed
 macro_rules! forbidden {
     () => {{
-        let err = StringError("Failed HMAC authentication".to_string());
-        return Err(iron::IronError::new(err, iron::status::Forbidden));
-    }}
-}
-
-/// try-like macro for converting io errors to iron errors until we have our own error type
-macro_rules! try_io {
-    ($expr:expr) => {{
-        match $expr {
-            std::result::Result::Ok(val) => val,
-            std::result::Result::Err(err) => {
-                let str_err = StringError(err.description().to_string());
-                return Err(iron::IronError::new(str_err, status::InternalServerError));
-            }
-        }
+        let err = ::error::Error::InvalidHmac;
+        return Err(::iron::IronError::new(err, ::iron::status::Forbidden));
     }}
 }
 

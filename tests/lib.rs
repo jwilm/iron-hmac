@@ -68,7 +68,7 @@ fn missing_hmac_is_forbidden() {
 }
 
 #[test]
-fn malformed_hmac_is_bad_request() {
+fn malformed_hmac_is_forbidden() {
     let (_close_guard, url) = build_hmac_hello_world();
 
     {
@@ -77,7 +77,7 @@ fn malformed_hmac_is_bad_request() {
                             .header(XHmac("123".to_owned()))
                             .send().unwrap();
 
-        assert_eq!(res.status, hyper::status::StatusCode::BadRequest);
+        assert_eq!(res.status, hyper::status::StatusCode::Forbidden);
     }
 }
 

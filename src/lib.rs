@@ -6,8 +6,7 @@
 //! After middleware handles signing and adding the appropriate header to the response.
 //!
 
-#![deny(unused_imports)]
-#![deny(dead_code)]
+#![deny(warnings)]
 
 extern crate openssl;
 extern crate iron;
@@ -23,16 +22,17 @@ use openssl::crypto::hash::Type;
 use openssl::crypto::hmac;
 use openssl::crypto::memcmp::eq as eq_constant_time;
 use rustc_serialize::hex::FromHex;
-use std::error::Error;
-use std::fmt::{self, Debug};
 use std::io::Write;
 use std::ops::Deref;
 use url::format::PathFormatter;
 
-mod util;
-
+mod error;
 #[macro_use]
 mod macros;
+mod util;
+
+use error::Result;
+use error::Error;
 
 /// Key used for HMAC
 ///
@@ -92,30 +92,15 @@ impl Hmac256Authentication {
     }
 }
 
-#[derive(Debug)]
-struct StringError(String);
-
-impl fmt::Display for StringError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Debug::fmt(self, f)
-    }
-}
-
-impl std::error::Error for StringError {
-    fn description(&self) -> &str { &*self.0 }
-}
-
-
 impl Hmac256Authentication {
-    fn compute_request_hmac(&self, req: &mut iron::Request) -> IronResult<Vec<u8>> {
-        let body = match req.get::<bodyparser::Raw>() {
-            Ok(Some(body)) => {
+    fn compute_request_hmac(&self, req: &mut iron::Request) -> Result<Vec<u8>> {
+        let body = match try!(req.get::<bodyparser::Raw>()) {
+            Some(body) => {
                 body
             },
-            Ok(None) => {
+            None => {
                 "".to_string()
             },
-            Err(_) => forbidden!()
         };
 
         let method = req.method.as_ref();
@@ -130,20 +115,19 @@ impl Hmac256Authentication {
 
         let mut merged_hmac = hmac::HMAC::new(Type::SHA256, &self.secret[..]);
 
-        merged_hmac.write_all(&method_hmac[..]);
-        merged_hmac.write_all(&path_hmac[..]);
-        merged_hmac.write_all(&body_hmac[..]);
+        try!(merged_hmac.write_all(&method_hmac[..]));
+        try!(merged_hmac.write_all(&path_hmac[..]));
+        try!(merged_hmac.write_all(&body_hmac[..]));
 
         Ok(merged_hmac.finish())
 
     }
 
-    fn compute_response_hmac(&self, res: &mut iron::Response)
-        -> IronResult<Vec<u8>> {
+    fn compute_response_hmac(&self, res: &mut iron::Response) -> Result<Vec<u8>> {
         let body: Vec<u8> = match res.body {
             Some(ref mut body) => {
                 let mut buf = util::Buffer::new();
-                body.write_body(&mut ResponseBody::new(&mut buf));
+                try!(body.write_body(&mut ResponseBody::new(&mut buf)));
                 buf.to_inner()
             }, None => {
                 Vec::new()
@@ -166,8 +150,7 @@ impl BeforeMiddleware for Hmac256Authentication {
             Some(hmac) => {
                 let s = std::str::from_utf8(&hmac[0][..]).unwrap();
                 if s.len() != 64 {
-                    let err = StringError("Incorrect HMAC length".to_string());
-                    return Err(iron::IronError::new(err, iron::status::BadRequest));
+                    forbidden!();
                 }
                 match s.from_hex() {
                     Ok(hex) => hex,
@@ -178,7 +161,10 @@ impl BeforeMiddleware for Hmac256Authentication {
                     }
                 }
             },
-            None => forbidden!()
+            None => {
+                let err = Error::MissingHmacHeader(self.hmac_header_key.clone());
+                return Err(::iron::IronError::new(err, ::iron::status::Forbidden));
+            }
         };
 
         if computed.len() != supplied.len() {
