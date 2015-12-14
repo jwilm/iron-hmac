@@ -12,7 +12,7 @@ computed and appended to the outgoing response.
 
 ## Usage
 
-For a complete example, please see the [example][].
+Please see the [example][].
 
 [Documentation][]
 
