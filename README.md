@@ -12,10 +12,10 @@ computed and appended to the outgoing response.
 
 ## Usage
 
-Please see the [example][].
+The best way to get started is by looking at the [example][]. For details,
+please see the [documentation][]
 
-[Documentation][]
 
 [Iron]: https://github.com/iron/iron/
 [example]: examples/hmac_middleware.rs
-[Documentation]: https://jwilm.github.io/iron-hmac/latest/iron_hmac/
+[documentation]: https://jwilm.github.io/iron-hmac/latest/iron_hmac/
