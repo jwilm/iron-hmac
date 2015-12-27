@@ -32,19 +32,17 @@
 
 #![deny(warnings)]
 
-extern crate openssl;
+extern crate crypto;
 extern crate iron;
 extern crate url;
 extern crate bodyparser;
 extern crate persistent;
 extern crate rustc_serialize;
+extern crate constant_time_eq;
 
 use iron::prelude::*;
 use iron::response::ResponseBody;
 use iron::{BeforeMiddleware, AfterMiddleware};
-use openssl::crypto::hash::Type;
-use openssl::crypto::hmac::HMAC;
-use std::io::Write;
 use std::ops::Deref;
 use url::format::PathFormatter;
 
@@ -55,6 +53,11 @@ mod util;
 
 use error::Result;
 use error::Error;
+
+use util::HmacExt;
+use crypto::mac::Mac;
+use crypto::hmac::Hmac;
+use crypto::sha2::Sha256;
 
 /// Key used for HMAC computation
 ///
@@ -128,13 +131,13 @@ impl Hmac256Authentication {
         let path_hmac = util::hmac256(&self.secret, path.as_bytes());
         let body_hmac = util::hmac256(&self.secret, body.as_bytes());
 
-        let mut merged_hmac = HMAC::new(Type::SHA256, &self.secret[..]);
+        let mut merged_hmac = Hmac::new(Sha256::new(), &self.secret[..]);
 
-        try!(merged_hmac.write_all(&method_hmac[..]));
-        try!(merged_hmac.write_all(&path_hmac[..]));
-        try!(merged_hmac.write_all(&body_hmac[..]));
+        merged_hmac.input(&method_hmac[..]);
+        merged_hmac.input(&path_hmac[..]);
+        merged_hmac.input(&body_hmac[..]);
 
-        Ok(merged_hmac.finish())
+        Ok(merged_hmac.finalize())
     }
 
     fn compute_response_hmac(&self, res: &mut iron::Response) -> Result<Vec<u8>> {
