@@ -7,5 +7,5 @@ rust:
   - nightly
 
 script:
-  - cargo test --features hmac-openssl
   - cargo test --features hmac-rust-crypto
+  - cargo test --features hmac-openssl
