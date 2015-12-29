@@ -1,13 +1,12 @@
 use std::io;
 use std::str::from_utf8;
 
-use openssl::crypto::hash::Type;
-use openssl::crypto::hmac::hmac;
 use rustc_serialize::hex::FromHex;
 use rustc_serialize::hex::ToHex;
 
+use constant_time_eq::constant_time_eq;
+
 use ::error::{Result};
-use ::SecretKey;
 
 // Vector extension from slice
 //
@@ -28,15 +27,10 @@ pub fn extend_vec(vec: &mut Vec<u8>, extension: &[u8]) {
     }
 }
 
-/// Compute an HMAC using SHA-256 hashing
-pub fn hmac256(secret: &SecretKey, data: &[u8]) -> Vec<u8> {
-    hmac(Type::SHA256, &secret, data)
-}
-
 /// Constant time equality comparison for byte lists
 #[inline]
 pub fn contant_time_equals(a: &[u8], b: &[u8]) -> bool {
-    ::openssl::crypto::memcmp::eq(a, b)
+    constant_time_eq(a, b)
 }
 
 

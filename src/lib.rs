@@ -32,19 +32,22 @@
 
 #![deny(warnings)]
 
+#[cfg(feature = "hmac-rust-crypto")]
+extern crate crypto;
+
+#[cfg(feature = "hmac-openssl")]
 extern crate openssl;
+
 extern crate iron;
 extern crate url;
 extern crate bodyparser;
 extern crate persistent;
 extern crate rustc_serialize;
+extern crate constant_time_eq;
 
 use iron::prelude::*;
 use iron::response::ResponseBody;
 use iron::{BeforeMiddleware, AfterMiddleware};
-use openssl::crypto::hash::Type;
-use openssl::crypto::hmac::HMAC;
-use std::io::Write;
 use std::ops::Deref;
 use url::format::PathFormatter;
 
@@ -52,6 +55,9 @@ mod error;
 #[macro_use]
 mod macros;
 mod util;
+mod hmac;
+
+use hmac::{Hmac256, hmac256, HmacBuilder};
 
 use error::Result;
 use error::Error;
@@ -124,17 +130,17 @@ impl Hmac256Authentication {
             formatter.to_string()
         };
 
-        let method_hmac = util::hmac256(&self.secret, method.as_bytes());
-        let path_hmac = util::hmac256(&self.secret, path.as_bytes());
-        let body_hmac = util::hmac256(&self.secret, body.as_bytes());
+        let method_hmac = hmac256(&self.secret, method.as_bytes());
+        let path_hmac = hmac256(&self.secret, path.as_bytes());
+        let body_hmac = hmac256(&self.secret, body.as_bytes());
 
-        let mut merged_hmac = HMAC::new(Type::SHA256, &self.secret[..]);
+        let mut merged_hmac = Hmac256::new(&self.secret);
 
-        try!(merged_hmac.write_all(&method_hmac[..]));
-        try!(merged_hmac.write_all(&path_hmac[..]));
-        try!(merged_hmac.write_all(&body_hmac[..]));
+        merged_hmac.input(&method_hmac[..])
+                   .input(&path_hmac[..])
+                   .input(&body_hmac[..]);
 
-        Ok(merged_hmac.finish())
+        Ok(merged_hmac.finalize())
     }
 
     fn compute_response_hmac(&self, res: &mut iron::Response) -> Result<Vec<u8>> {
@@ -147,7 +153,7 @@ impl Hmac256Authentication {
             None => Vec::new()
         };
 
-        let response_hmac = util::hmac256(&self.secret, &body[..]);
+        let response_hmac = hmac256(&self.secret, &body[..]);
 
         // Need to reset body now that we've written it
         res.body = Some(Box::new(body));
