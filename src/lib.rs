@@ -32,7 +32,12 @@
 
 #![deny(warnings)]
 
+#[cfg(feature = "hmac-rust-crypto")]
 extern crate crypto;
+
+#[cfg(feature = "hmac-openssl")]
+extern crate openssl;
+
 extern crate iron;
 extern crate url;
 extern crate bodyparser;
@@ -50,14 +55,12 @@ mod error;
 #[macro_use]
 mod macros;
 mod util;
+mod hmac;
+
+use hmac::{Hmac256, hmac256, HmacBuilder};
 
 use error::Result;
 use error::Error;
-
-use util::HmacExt;
-use crypto::mac::Mac;
-use crypto::hmac::Hmac;
-use crypto::sha2::Sha256;
 
 /// Key used for HMAC computation
 ///
@@ -127,15 +130,15 @@ impl Hmac256Authentication {
             formatter.to_string()
         };
 
-        let method_hmac = util::hmac256(&self.secret, method.as_bytes());
-        let path_hmac = util::hmac256(&self.secret, path.as_bytes());
-        let body_hmac = util::hmac256(&self.secret, body.as_bytes());
+        let method_hmac = hmac256(&self.secret, method.as_bytes());
+        let path_hmac = hmac256(&self.secret, path.as_bytes());
+        let body_hmac = hmac256(&self.secret, body.as_bytes());
 
-        let mut merged_hmac = Hmac::new(Sha256::new(), &self.secret[..]);
+        let mut merged_hmac = Hmac256::new(&self.secret);
 
-        merged_hmac.input(&method_hmac[..]);
-        merged_hmac.input(&path_hmac[..]);
-        merged_hmac.input(&body_hmac[..]);
+        merged_hmac.input(&method_hmac[..])
+                   .input(&path_hmac[..])
+                   .input(&body_hmac[..]);
 
         Ok(merged_hmac.finalize())
     }
@@ -150,7 +153,7 @@ impl Hmac256Authentication {
             None => Vec::new()
         };
 
-        let response_hmac = util::hmac256(&self.secret, &body[..]);
+        let response_hmac = hmac256(&self.secret, &body[..]);
 
         // Need to reset body now that we've written it
         res.body = Some(Box::new(body));

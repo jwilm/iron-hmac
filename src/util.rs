@@ -6,12 +6,7 @@ use rustc_serialize::hex::ToHex;
 
 use constant_time_eq::constant_time_eq;
 
-use crypto::mac::Mac;
-use crypto::hmac::Hmac;
-use crypto::sha2::Sha256;
-
 use ::error::{Result};
-use ::SecretKey;
 
 // Vector extension from slice
 //
@@ -30,35 +25,6 @@ pub fn extend_vec(vec: &mut Vec<u8>, extension: &[u8]) {
             vec.set_len(len + 1);
         }
     }
-}
-
-pub trait HmacExt {
-    fn finalize(&mut self) -> Vec<u8>;
-}
-
-impl<D: ::crypto::digest::Digest> HmacExt for Hmac<D> {
-    fn finalize(&mut self) -> Vec<u8> {
-        let len = self.output_bytes();
-        // Make vec for result
-        let mut result = Vec::with_capacity(len);
-        for _ in 0..len {
-            result.push(0);
-        }
-
-        self.raw_result(&mut result[..]);
-
-        result
-    }
-}
-
-/// Compute an HMAC using SHA-256 hashing
-pub fn hmac256(secret: &SecretKey, data: &[u8]) -> Vec<u8> {
-    // Create hmac
-    let mut hmac = Hmac::new(Sha256::new(), &secret);
-
-    // Compute HMAC
-    hmac.input(data);
-    hmac.finalize()
 }
 
 /// Constant time equality comparison for byte lists

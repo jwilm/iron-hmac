@@ -7,18 +7,26 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/jwilm/iron-hmac"
 documentation = "https://jwilm.github.io/iron-hmac/latest/iron_hmac/"
+build = "build.rs"
+
+[features]
+default = []
+
+# Use openssl HMAC/SHA256 implementations
+hmac-openssl = ["openssl"]
+
+# Use rust-crypto HMAC/SHA256 implementations
+hmac-rust-crypto = ["rust-crypto"]
 
 [dependencies]
-rust-crypto = "0.2.34"
 url = "0.5"
-bodyparser = "0.0"
-persistent = "0.0"
+bodyparser = "0"
+persistent = { git = "https://github.com/iron/persistent", rev = "8fba58eff0ad56335b3f1a556cc83b51c882e447" }
 rustc-serialize = "0.3"
 constant_time_eq = "0.1.0"
-
-[dependencies.iron]
-version = "0.2"
-default-features = false
+rust-crypto = { version = "0.2.34", optional = true }
+openssl = { version = "0.7", optional = true }
+iron = "*"
 
 [dev-dependencies.hyper]
 version = "0.7"

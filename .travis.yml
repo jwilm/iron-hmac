@@ -5,3 +5,7 @@ rust:
   - stable
   - beta
   - nightly
+
+script:
+  - cargo test --features hmac-openssl
+  - cargo test --features hmac-rust-crypto
