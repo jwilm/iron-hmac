@@ -9,7 +9,7 @@ repository = "https://github.com/jwilm/iron-hmac"
 documentation = "https://jwilm.github.io/iron-hmac/latest/iron_hmac/"
 
 [features]
-default = []
+default = ["hmac-rust-crypto"]
 
 # Use openssl HMAC/SHA256 implementations
 hmac-openssl = ["openssl"]
