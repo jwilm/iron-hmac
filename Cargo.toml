@@ -1,6 +1,6 @@
 [package]
 name = "iron-hmac"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Joe Wilm <joe@jwilm.com>"]
 description = "HMAC middleware for the Iron HTTP framework"
 license = "MIT"
@@ -19,14 +19,14 @@ hmac-openssl = ["openssl"]
 hmac-rust-crypto = ["rust-crypto"]
 
 [dependencies]
-url = "0.5"
 bodyparser = "0"
-persistent = { git = "https://github.com/iron/persistent", rev = "8fba58eff0ad56335b3f1a556cc83b51c882e447" }
-rustc-serialize = "0.3"
 constant_time_eq = "0.1.0"
-rust-crypto = { version = "0.2.34", optional = true }
+iron = "0.2"
 openssl = { version = "0.7", optional = true }
-iron = "*"
+persistent = "0"
+rust-crypto = { version = "0.2", optional = true }
+rustc-serialize = "0.3"
+url = "0.5"
 
 [dev-dependencies.hyper]
 version = "0.7"
