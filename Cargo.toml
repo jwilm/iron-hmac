@@ -1,13 +1,12 @@
 [package]
 name = "iron-hmac"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Joe Wilm <joe@jwilm.com>"]
 description = "HMAC middleware for the Iron HTTP framework"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/jwilm/iron-hmac"
 documentation = "https://jwilm.github.io/iron-hmac/latest/iron_hmac/"
-build = "build.rs"
 
 [features]
 default = []

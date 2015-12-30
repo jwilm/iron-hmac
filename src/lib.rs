@@ -1,5 +1,8 @@
 //! [Iron] middleware for HMAC authentication
 //!
+//! You must specify either `hmac-openssl` or `hmac-rust-crypto` features for the project to build.
+//! Otherwise, your build will fail with something about `Hmac256` being undefined.
+//!
 //! This package contains `BeforeMiddleware` for authenticating HTTP requests and `AfterMiddleware`
 //! for signing response. The HMAC stragegy is presently hardcoded as follows using an SHA-256 hash.
 //!
