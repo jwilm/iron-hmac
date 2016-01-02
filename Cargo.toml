@@ -1,6 +1,6 @@
 [package]
 name = "iron-hmac"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Joe Wilm <joe@jwilm.com>"]
 description = "HMAC middleware for the Iron HTTP framework"
 license = "MIT"
@@ -12,21 +12,26 @@ documentation = "https://jwilm.github.io/iron-hmac/latest/iron_hmac/"
 default = ["hmac-rust-crypto"]
 
 # Use openssl HMAC/SHA256 implementations
-hmac-openssl = ["openssl"]
+# hmac-openssl = ["openssl"]
 
 # Use rust-crypto HMAC/SHA256 implementations
 hmac-rust-crypto = ["rust-crypto"]
 
 [dependencies]
-bodyparser = "0"
-constant_time_eq = "0.1.0"
-iron = "0.2"
-openssl = { version = "0.7", optional = true }
+constant_time_eq = "0.1"
+iron = { version = "*", default-features = false }
 persistent = "0"
-rust-crypto = { version = "0.2", optional = true }
 rustc-serialize = "0.3"
 url = "0.5"
 
-[dev-dependencies.hyper]
-version = "0.7"
-default-features = false
+# [dependencies.openssl]
+# version = "0.7"
+# optional = true
+
+[dependencies.rust-crypto]
+version = "0.2"
+optional = true
+
+[dependencies.bodyparser]
+git = "https://github.com/iron/body-parser"
+rev = "f9929111bd2efe7c29b519a5aa2d7bc32fddfac0"
