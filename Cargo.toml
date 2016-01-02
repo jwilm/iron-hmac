@@ -35,3 +35,7 @@ optional = true
 [dependencies.bodyparser]
 git = "https://github.com/iron/body-parser"
 rev = "f9929111bd2efe7c29b519a5aa2d7bc32fddfac0"
+
+[dev-dependencies.hyper]
+version = "0.7"
+default-features = false
