@@ -12,7 +12,7 @@ documentation = "https://jwilm.github.io/iron-hmac/latest/iron_hmac/"
 default = ["hmac-rust-crypto"]
 
 # Use openssl HMAC/SHA256 implementations
-# hmac-openssl = ["openssl"]
+hmac-openssl = ["openssl"]
 
 # Use rust-crypto HMAC/SHA256 implementations
 hmac-rust-crypto = ["rust-crypto"]
@@ -24,9 +24,9 @@ persistent = "0"
 rustc-serialize = "0.3"
 url = "0.5"
 
-# [dependencies.openssl]
-# version = "0.7"
-# optional = true
+[dependencies.openssl]
+version = "0.7"
+optional = true
 
 [dependencies.rust-crypto]
 version = "0.2"
