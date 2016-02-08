@@ -49,12 +49,18 @@ extern crate bodyparser;
 extern crate persistent;
 extern crate rustc_serialize;
 extern crate constant_time_eq;
+extern crate hyper;
+
+use std::any::Any;
+use std::fmt::{self, Debug};
+use std::ops::Deref;
 
 use iron::prelude::*;
 use iron::response::ResponseBody;
 use iron::{BeforeMiddleware, AfterMiddleware};
-use std::ops::Deref;
 use url::format::PathFormatter;
+
+use hyper::header::{Header, HeaderFormat};
 
 mod error;
 #[macro_use]
@@ -174,21 +180,72 @@ impl BeforeMiddleware for Hmac256Authentication {
             Some(hmac) => try!(util::from_hex(&hmac[0][..])),
             None => {
                 let err = Error::MissingHmacHeader(self.hmac_header_key.clone());
-                return Err(::iron::IronError::new(err, ::iron::status::Forbidden));
+                return Err(::iron::IronError::new(err, ::iron::status::Unauthorized));
             }
         };
 
         if computed.len() != supplied.len() {
-            forbidden!();
+            unauthorized!();
         }
 
         if util::contant_time_equals(&computed[..], &supplied[..]) {
             Ok(())
         } else {
-            forbidden!()
+            unauthorized!()
         }
     }
 }
+
+/// Authentication strategy
+///
+/// This is used primarily for formatting the www-authenticate header on 401 responses.
+#[derive(Clone, Debug)]
+pub struct HmacDigest;
+
+/// Challenges to be returned in a WWWW-Authenticate response header
+pub trait WwwAuthenticateChallenge {
+    /// Format the challenge
+    ///
+    /// Eg, a challenge for basic auth might write `Basic realm="<realm>"`
+    fn fmt_challenge(&self, &mut fmt::Formatter) -> fmt::Result;
+}
+
+impl WwwAuthenticateChallenge for HmacDigest {
+    fn fmt_challenge(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let algo = "hmac(hmac(request.method) + hmac(request.path) + hmac(request.body))";
+        let hmac = "HMAC-SHA-256";
+        let realm = "iron-hmac";
+        write!(f, r#"{} realm="{}", algorithm="{}", hmac="{}"#, "HMACDigest", realm, algo, hmac)
+    }
+}
+
+/// WWW-Authenticate for returning authentication challenges
+#[derive(Clone, Debug)]
+pub struct WwwAuthenticate<C: WwwAuthenticateChallenge>(C);
+
+impl<C> Header for WwwAuthenticate<C>
+    where C: 'static + Any + Clone + Send + Sync + Debug + WwwAuthenticateChallenge
+{
+    fn header_name() -> &'static str {
+        "WWW-Authenticate"
+    }
+
+    /// Parse a WWW-Authenticate header
+    ///
+    /// Always returns an error since iron-hmac only uses this as a response header
+    fn parse_header(_raw: &[Vec<u8>]) -> hyper::Result<WwwAuthenticate<C>> {
+        Err(::hyper::Error::Header)
+    }
+}
+
+impl<C> HeaderFormat for WwwAuthenticate<C>
+    where C: 'static + Any + Clone + Send + Sync + Debug + WwwAuthenticateChallenge
+{
+    fn fmt_header(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt_challenge(f)
+    }
+}
+
 
 impl AfterMiddleware for Hmac256Authentication {
     fn after(&self, _: &mut iron::Request, mut res: iron::Response) -> IronResult<Response> {
@@ -196,5 +253,15 @@ impl AfterMiddleware for Hmac256Authentication {
         let hmac_hex_encoded = util::to_hex(&hmac[..]).as_bytes().to_vec();
         res.headers.set_raw(self.hmac_header_key.clone(), vec![hmac_hex_encoded]);
         Ok(res)
+    }
+
+    fn catch(&self, _: &mut iron::Request, mut err: iron::IronError) -> IronResult<Response> {
+        // Attach WWW-Authenticate header for unauthorized response
+        if let Some(status) = err.response.status {
+            if status == hyper::status::StatusCode::Unauthorized {
+                err.response.headers.set(WwwAuthenticate(HmacDigest));
+            }
+        }
+        Err(err)
     }
 }
