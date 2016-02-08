@@ -64,8 +64,8 @@ impl From<Error> for IronError {
     fn from(err: Error) -> IronError {
         match err {
             Error::MissingHmacHeader(_) => IronError::new(err, status::BadRequest),
-            Error::InvalidHmac => IronError::new(err, status::Forbidden),
-            Error::DecodingHex(_) => IronError::new(err, status::Forbidden),
+            Error::InvalidHmac => IronError::new(err, status::Unauthorized),
+            Error::DecodingHex(_) => IronError::new(err, status::Unauthorized),
             _ => IronError::new(err, status::InternalServerError)
         }
     }

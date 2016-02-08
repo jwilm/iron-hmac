@@ -10,6 +10,7 @@ extern crate hyper;
 use hyper::Client;
 use iron::prelude::*;
 use iron_hmac::Hmac256Authentication;
+use std::str;
 use std::io::Read;
 
 /// The header used for our tests
@@ -48,14 +49,27 @@ fn build_hmac_hello_world() -> (CloseGuard, String) {
     chain.link_after(hmac_after);
 
     // Server is now running
-    let server = Iron::new(chain).http("localhost:0").unwrap();
+    let server = Iron::new(chain).http("127.0.0.1:0").unwrap();
     let base_url = format!("http://{}", server.socket);
 
     (CloseGuard(server), base_url)
 }
 
+macro_rules! assert_www_authenticate_hmac_digest {
+    ($res:expr) => {{
+        println!("{:?}", $res.headers);
+        let auth = $res.headers.get_raw("WWW-Authenticate")
+                               .expect("did not get www-authenticate header")
+                               .iter().nth(0).expect("did not get www-authenticate header value");
+
+        let auth = str::from_utf8(auth).expect("www-authenticate header is utf8");
+        assert!(auth.starts_with("HMACDigest"));
+        assert!(auth.contains("algorithm"));
+    }}
+}
+
 #[test]
-fn missing_hmac_is_forbidden() {
+fn missing_hmac_is_unauthorized() {
     let (_close_guard, url) = build_hmac_hello_world();
 
     {
@@ -63,12 +77,13 @@ fn missing_hmac_is_forbidden() {
         let res = client.get(&url[..])
                             .send().unwrap();
 
-        assert_eq!(res.status, hyper::status::StatusCode::Forbidden);
+        assert_eq!(res.status, hyper::status::StatusCode::Unauthorized);
+        assert_www_authenticate_hmac_digest!(res);
     }
 }
 
 #[test]
-fn malformed_hmac_is_forbidden() {
+fn malformed_hmac_is_unauthorized() {
     let (_close_guard, url) = build_hmac_hello_world();
 
     {
@@ -77,12 +92,13 @@ fn malformed_hmac_is_forbidden() {
                             .header(XHmac("123".to_owned()))
                             .send().unwrap();
 
-        assert_eq!(res.status, hyper::status::StatusCode::Forbidden);
+        assert_eq!(res.status, hyper::status::StatusCode::Unauthorized);
+        assert_www_authenticate_hmac_digest!(res);
     }
 }
 
 #[test]
-fn incorrect_hmac_is_forbidden() {
+fn incorrect_hmac_is_unauthorized() {
     let (_close_guard, url) = build_hmac_hello_world();
 
     {
@@ -92,7 +108,8 @@ fn incorrect_hmac_is_forbidden() {
                             .header(XHmac(request_hmac.to_owned()))
                             .send().unwrap();
 
-        assert_eq!(res.status, hyper::status::StatusCode::Forbidden);
+        assert_eq!(res.status, hyper::status::StatusCode::Unauthorized);
+        assert_www_authenticate_hmac_digest!(res);
     }
 }
 
