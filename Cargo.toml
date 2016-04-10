@@ -1,6 +1,6 @@
 [package]
 name = "iron-hmac"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Joe Wilm <joe@jwilm.com>"]
 description = "HMAC middleware for the Iron HTTP framework"
 license = "MIT OR Apache-2.0"
@@ -33,9 +33,8 @@ version = "0.2"
 optional = true
 
 [dependencies.bodyparser]
-git = "https://github.com/iron/body-parser"
-rev = "f9929111bd2efe7c29b519a5aa2d7bc32fddfac0"
+version = "0.3"
 
 [dev-dependencies.hyper]
-version = "0.7"
+version = "0.8"
 default-features = false
