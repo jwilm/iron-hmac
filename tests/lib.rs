@@ -48,7 +48,7 @@ fn build_hmac_hello_world() -> (CloseGuard, String) {
     chain.link_after(hmac_after);
 
     // Server is now running
-    let server = Iron::new(chain).http("localhost:0").unwrap();
+    let server = Iron::new(chain).http("127.0.0.1:0").unwrap();
     let base_url = format!("http://{}", server.socket);
 
     (CloseGuard(server), base_url)
