@@ -1,6 +1,6 @@
 [package]
 name = "iron-hmac"
-version = "0.3.3"
+version = "0.4.0"
 authors = ["Joe Wilm <joe@jwilm.com>"]
 description = "HMAC middleware for the Iron HTTP framework"
 license = "MIT OR Apache-2.0"
