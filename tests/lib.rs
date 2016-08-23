@@ -20,7 +20,7 @@ header! { (XHmac, HMAC_HEADER_NAME) => [String] }
 
 /// Ensures that the iron server is closed (and the test thread ends) upon failure. The drop
 /// implementation simply calls close on the underlying hyper server.
-struct CloseGuard(hyper::server::Listening);
+struct CloseGuard(::iron::Listening);
 
 impl Drop for CloseGuard {
     fn drop(&mut self) {
@@ -48,7 +48,7 @@ fn build_hmac_hello_world() -> (CloseGuard, String) {
     chain.link_after(hmac_after);
 
     // Server is now running
-    let server = Iron::new(chain).http("localhost:0").unwrap();
+    let server = Iron::new(chain).http("127.0.0.1:0").unwrap();
     let base_url = format!("http://{}", server.socket);
 
     (CloseGuard(server), base_url)

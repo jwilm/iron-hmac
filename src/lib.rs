@@ -44,7 +44,6 @@ extern crate crypto;
 extern crate openssl;
 
 extern crate iron;
-extern crate url;
 extern crate bodyparser;
 extern crate persistent;
 extern crate rustc_serialize;
@@ -54,7 +53,6 @@ use iron::prelude::*;
 use iron::response::ResponseBody;
 use iron::{BeforeMiddleware, AfterMiddleware};
 use std::ops::Deref;
-use url::format::PathFormatter;
 
 mod error;
 #[macro_use]
@@ -130,13 +128,10 @@ impl Hmac256Authentication {
         };
 
         let method = req.method.as_ref();
-        let path = {
-            let formatter = PathFormatter { path: &req.url.path };
-            formatter.to_string()
-        };
 
         let method_hmac = hmac256(&self.secret, method.as_bytes());
-        let path_hmac = hmac256(&self.secret, path.as_bytes());
+        let url = req.url.clone().into_generic_url();
+        let path_hmac = hmac256(&self.secret, url.path().as_bytes());
         let body_hmac = hmac256(&self.secret, body.as_bytes());
 
         let mut merged_hmac = Hmac256::new(&self.secret);
