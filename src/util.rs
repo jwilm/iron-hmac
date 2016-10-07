@@ -8,25 +8,6 @@ use constant_time_eq::constant_time_eq;
 
 use ::error::{Result};
 
-// Vector extension from slice
-//
-// The implementation here is the extend_from_slice which should be stabilised in rust 1.6
-// https://github.com/rust-lang/rust/pull/30187/files#diff-77adadec35cb5b03d4933f83754de940R966
-pub fn extend_vec(vec: &mut Vec<u8>, extension: &[u8]) {
-    vec.reserve(extension.len());
-
-    for i in 0..extension.len() {
-        let len = vec.len();
-        // Unsafe code so this can be optimised to a memcpy (or something
-        // similarly fast) when T is Copy. LLVM is easily confused, so any
-        // extra operations during the loop can prevent this optimisation.
-        unsafe {
-            ::std::ptr::write(vec.get_unchecked_mut(len), extension.get_unchecked(i).clone());
-            vec.set_len(len + 1);
-        }
-    }
-}
-
 /// Constant time equality comparison for byte lists
 #[inline]
 pub fn contant_time_equals(a: &[u8], b: &[u8]) -> bool {
@@ -54,7 +35,7 @@ impl Buffer {
 
 impl io::Write for Buffer {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        extend_vec(&mut self.0, buf);
+        self.0.extend_from_slice(buf);
         Ok(buf.len())
     }
 
