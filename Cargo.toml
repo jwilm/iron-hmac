@@ -20,7 +20,7 @@ hmac-rust-crypto = ["rust-crypto"]
 [dependencies]
 constant_time_eq = "0.1"
 iron = { version = "0.5", default-features = false }
-persistent = "0.2"
+persistent = "0.3"
 rustc-serialize = "0.3"
 url = "1.6"
 
