@@ -25,7 +25,7 @@ rustc-serialize = "0.3"
 url = "1.6"
 
 [dependencies.openssl]
-version = "0.7"
+version = "0.9"
 optional = true
 
 [dependencies.rust-crypto]
