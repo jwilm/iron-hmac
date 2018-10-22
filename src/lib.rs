@@ -48,9 +48,9 @@ extern crate bodyparser;
 extern crate persistent;
 extern crate rustc_serialize;
 extern crate constant_time_eq;
+extern crate url;
 
 use iron::prelude::*;
-use iron::response::ResponseBody;
 use iron::{BeforeMiddleware, AfterMiddleware};
 use std::ops::Deref;
 
@@ -130,7 +130,7 @@ impl Hmac256Authentication {
         let method = req.method.as_ref();
 
         let method_hmac = hmac256(&self.secret, method.as_bytes());
-        let url = req.url.clone().into_generic_url();
+        let url: url::Url = req.url.clone().into();
         let path_hmac = hmac256(&self.secret, url.path().as_bytes());
         let body_hmac = hmac256(&self.secret, body.as_bytes());
 
@@ -147,7 +147,7 @@ impl Hmac256Authentication {
         let body: Vec<u8> = match res.body {
             Some(ref mut body) => {
                 let mut buf = util::Buffer::new();
-                try!(body.write_body(&mut ResponseBody::new(&mut buf)));
+                try!(body.write_body(&mut buf));
                 buf.to_inner()
             },
             None => Vec::new()

@@ -6,14 +6,15 @@ extern crate persistent;
 
 #[macro_use]
 extern crate hyper;
+extern crate reqwest;
 
-use hyper::Client;
+use reqwest::Client;
 use iron::prelude::*;
 use iron_hmac::Hmac256Authentication;
 use std::io::Read;
 
 /// The header used for our tests
-static HMAC_HEADER_NAME: &'static str = "x-hmac";
+const HMAC_HEADER_NAME: &'static str = "x-hmac";
 
 /// Hyper wrapper for the hmac header
 header! { (XHmac, HMAC_HEADER_NAME) => [String] }
@@ -63,7 +64,7 @@ fn missing_hmac_is_forbidden() {
         let res = client.get(&url[..])
                             .send().unwrap();
 
-        assert_eq!(res.status, hyper::status::StatusCode::Forbidden);
+        assert_eq!(res.status(), hyper::StatusCode::Forbidden);
     }
 }
 
@@ -77,7 +78,7 @@ fn malformed_hmac_is_forbidden() {
                             .header(XHmac("123".to_owned()))
                             .send().unwrap();
 
-        assert_eq!(res.status, hyper::status::StatusCode::Forbidden);
+        assert_eq!(res.status(), hyper::StatusCode::Forbidden);
     }
 }
 
@@ -92,7 +93,7 @@ fn incorrect_hmac_is_forbidden() {
                             .header(XHmac(request_hmac.to_owned()))
                             .send().unwrap();
 
-        assert_eq!(res.status, hyper::status::StatusCode::Forbidden);
+        assert_eq!(res.status(), hyper::StatusCode::Forbidden);
     }
 }
 
@@ -110,12 +111,12 @@ fn correct_hmac_is_ok() {
                             .header(XHmac(request_hmac.to_owned()))
                             .send().unwrap();
 
-        assert_eq!(res.status, hyper::status::StatusCode::Ok);
+        assert_eq!(res.status(), hyper::StatusCode::Ok);
 
         let mut body = String::new();
         res.read_to_string(&mut body).unwrap();
 
-        let actual_response_hmac = &res.headers.get_raw("x-hmac").unwrap()[0];
+        let actual_response_hmac = &res.headers().get_raw("x-hmac").unwrap()[0];
 
         assert_eq!("Hello, world!", body);
 

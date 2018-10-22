@@ -21,7 +21,7 @@ pub trait HmacBuilder {
     fn input(&mut self, data: &[u8]) -> &mut Self;
 
     // Return the hmac digest
-    fn finalize(mut self) -> Vec<u8>;
+    fn finalize(self) -> Vec<u8>;
 }
 
 /// Compute an HMAC using SHA-256 hashing
